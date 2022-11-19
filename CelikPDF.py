@@ -63,6 +63,7 @@ class TrendsellerPDF:
 
     def get_material_type_width_height(self):
         data = {}
+        # dopisac komentarze i jesli 'SEGMENT' to nie dodawac szerokosci
         for ring, pages in self.rings_and_their_pages.items():
             page_text = self.text_of_pdf_pages_dict[f'{pages[0]}']
             index_before_gold_types = page_text.index(POSITION_BEFORE_GOLD_TYPES)
