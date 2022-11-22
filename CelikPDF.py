@@ -1,6 +1,5 @@
 import PyPDF2
 
-
 FIRST_WORD_IN_PDF = 'BESTELLDETAILS'
 POSITION_BEFORE_MACHINE_PARAMS = 'NO. Ø RINGBREITE RINGHÖHE WRA ERA WRI ERI KBB OEA OBLIQUE'
 POSITION_BEFORE_GOLD_TYPES = 'EDELMETALL'
@@ -63,9 +62,16 @@ class TrendsellerPDF:
 
     def get_material_type_width_height(self):
         data = {}
+        is_aussen_innen = False
+        is_segment = False
         for ring, pages in self.rings_and_their_pages.items():
             page_text = self.text_of_pdf_pages_dict[f'{pages[0]}']
             index_before_gold_types = page_text.index(POSITION_BEFORE_GOLD_TYPES)
+            index_before_aussen_innen = page_text.index('PROFIL RINGWEITE RINGBREITE RINGHÖHE VERTEILUNG GESAMTGEWICHT')
+            if 'AXIAL' in page_text[index_before_aussen_innen + 1]:
+                is_aussen_innen = True
+            if 'SEGMENT' in page_text[index_before_aussen_innen + 1]:
+                is_segment = True
             tab_with_color_type = page_text[index_before_gold_types + 1].split()[1:]
             tab_with_width = page_text[index_before_gold_types + 2].split()[1:]
             tab_with_height = page_text[index_before_gold_types + 3].split()[1:]
@@ -75,6 +81,7 @@ class TrendsellerPDF:
             tab_colors_good = []
             tab_width_good = []
             tab_height_good = []
+
             if len(tab_with_color_type) % 2 == 1:
                 tab_with_color_type.pop()
             for position in range(0, len(tab_with_color_type), 2):
@@ -84,14 +91,23 @@ class TrendsellerPDF:
                 tab_type_good.append(tab_with_color_type[loop_counter_type][:-2])
                 loop_counter_width_height += 1
                 loop_counter_type += 2
+
             for i in range(len(tab_colors_good) - 1):
                 if tab_colors_good[i] == tab_colors_good[i + 1]:
                     tab_colors_good.pop(i + 1)
                     tab_type_good.pop(i + 1)
                     tab_height_good.pop(i + 1)
-                    temp = tab_width_good[i + 1]
-                    tab_width_good.pop(i + 1)
-                    tab_width_good[i] = float(tab_width_good[i]) + float(temp)
+                    if not is_aussen_innen:
+                        temp = tab_width_good[i + 1]
+                        tab_width_good.pop(i + 1)
+                        tab_width_good[i] = float(tab_width_good[i]) + float(temp)
+                    if is_aussen_innen:
+                        temp = tab_height_good[i + 1]
+                        tab_height_good.pop(i + 1)
+                        tab_height_good[i] = float(tab_height_good[i]) + float(temp)
+            # print(is_aussen_innen)
+            # print(tab_width_good)
+            # print(tab_height_good)
             data[f'{ring}'] = {}
             for j in range(len(tab_colors_good)):
                 data[f'{ring}'][f'COLOR_{j}'] = {}
@@ -104,7 +120,7 @@ class TrendsellerPDF:
 
 
 if __name__ == "__main__":
-    trendseller = TrendsellerPDF("Trendseller33460.pdf")
+    trendseller = TrendsellerPDF("Trendseller33463.pdf")
     # trendseller.get_number_of_rings_in_pdf()
     # trendseller.get_profile_and_params()
     # trendseller.has_stones()
